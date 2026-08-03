@@ -40,7 +40,7 @@ def predict_revenue():
         'Store_Age': product_store_data['Store_Age'],
         'Store_Size': product_store_data['Store_Size'],
         'Store_Location_City_Type': product_store_data['Store_Location_City_Type'],
-        'Store_Type': product_store_data['Store_Type']
+        'Store_Type': product_store_data['Store_Type'],
         'Store_Id': product_store_data['Store_Id']
     }
 
@@ -70,6 +70,28 @@ def predict_revenue_batch():
 
     # Read the CSV file into a Pandas DataFrame
     input_data = pd.read_csv(file)
+
+    # Apply same preprocessing as in the training notebook
+    # Rename columns to match the trained model's expected features
+    input_data = input_data.rename(columns={
+        'Product_Id_char': 'Store_Id',
+        'Store_Age_Years': 'Store_Establishment_Year', # Temporarily rename for age calculation
+        'Product_Type_Category': 'Product_Type'
+    })
+
+    # Feature engineering for Store_Age
+    # Assuming the context of the training data where current_year was 2009
+    current_year_for_age_calculation = 2009 # This value is hardcoded as per the notebook's logic
+    input_data['Store_Age'] = current_year_for_age_calculation - input_data['Store_Establishment_Year']
+    input_data.drop('Store_Establishment_Year', axis=1, inplace=True)
+
+    # Define the order of columns as expected by the model's preprocessor
+    model_expected_features = [
+        'Product_Weight', 'Product_Sugar_Content', 'Product_Allocated_Area',
+        'Product_Type', 'Product_MRP', 'Store_Age', 'Store_Size',
+        'Store_Location_City_Type', 'Store_Type', 'Store_Id'
+    ]
+    input_data = input_data[model_expected_features]
 
     # Make predictions for all entries in the DataFrame
     predicted_revenues = model.predict(input_data).tolist()
