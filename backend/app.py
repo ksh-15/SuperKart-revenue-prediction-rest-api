@@ -37,11 +37,11 @@ def predict_revenue():
         'Product_Allocated_Area': product_store_data['Product_Allocated_Area'],
         'Product_Type': product_store_data['Product_Type'],
         'Product_MRP': product_store_data['Product_MRP'],
-        'Store_Age': product_store_data['Store_Age'],
+        'Store_Id': product_store_data['Store_Id'],
         'Store_Size': product_store_data['Store_Size'],
         'Store_Location_City_Type': product_store_data['Store_Location_City_Type'],
         'Store_Type': product_store_data['Store_Type'],
-        'Store_Id': product_store_data['Store_Id']
+        'Store_Age': product_store_data['Store_Age']
     }
 
     # Convert the extracted data into a Pandas DataFrame
@@ -72,25 +72,39 @@ def predict_revenue_batch():
     input_data = pd.read_csv(file)
 
     # Apply same preprocessing as in the training notebook
-    # Rename columns to match the trained model's expected features
-    input_data = input_data.rename(columns={
-        'Product_Id_char': 'Store_Id',
-        'Store_Age_Years': 'Store_Establishment_Year', # Temporarily rename for age calculation
-        'Product_Type_Category': 'Product_Type'
-    })
+    # 1. Drop 'Product_Id_char' if it exists, as Product_Id was dropped during training.
+    if 'Product_Id_char' in input_data.columns:
+        input_data.drop('Product_Id_char', axis=1, inplace=True)
 
-    # Feature engineering for Store_Age
-    # Assuming the context of the training data where current_year was 2009
-    current_year_for_age_calculation = 2009 # This value is hardcoded as per the notebook's logic
-    input_data['Store_Age'] = current_year_for_age_calculation - input_data['Store_Establishment_Year']
-    input_data.drop('Store_Establishment_Year', axis=1, inplace=True)
+    # 2. Rename 'Product_Type_Category' to 'Product_Type' if it exists.
+    if 'Product_Type_Category' in input_data.columns:
+        input_data.rename(columns={'Product_Type_Category': 'Product_Type'}, inplace=True)
 
-    # Define the order of columns as expected by the model's preprocessor
+    # 3. Handle 'Store_Age':
+    #    If 'Store_Age_Years' exists, rename it to 'Store_Age'.
+    #    Else if 'Store_Establishment_Year' exists, calculate 'Store_Age' and drop 'Store_Establishment_Year'.
+    current_year_for_age_calculation = 2009 # Matches the notebook's logic
+
+    if 'Store_Age_Years' in input_data.columns:
+        input_data.rename(columns={'Store_Age_Years': 'Store_Age'}, inplace=True)
+        # If Store_Establishment_Year also exists, drop it to avoid redundancy
+        if 'Store_Establishment_Year' in input_data.columns:
+            input_data.drop('Store_Establishment_Year', axis=1, inplace=True)
+    elif 'Store_Establishment_Year' in input_data.columns:
+        input_data['Store_Age'] = current_year_for_age_calculation - input_data['Store_Establishment_Year']
+        input_data.drop('Store_Establishment_Year', axis=1, inplace=True)
+    # Else: assume 'Store_Age' is already present and correctly named
+
+    # Define the exact order of columns as expected by the model's preprocessor (X_train)
+    # This also acts as a final filter for any unexpected columns
     model_expected_features = [
         'Product_Weight', 'Product_Sugar_Content', 'Product_Allocated_Area',
-        'Product_Type', 'Product_MRP', 'Store_Age', 'Store_Size',
-        'Store_Location_City_Type', 'Store_Type', 'Store_Id'
+        'Product_Type', 'Product_MRP', 'Store_Id', 'Store_Size',
+        'Store_Location_City_Type', 'Store_Type', 'Store_Age'
     ]
+
+    # Select and reorder columns to match the model's training features
+    # This will also drop any columns not in model_expected_features
     input_data = input_data[model_expected_features]
 
     # Make predictions for all entries in the DataFrame
