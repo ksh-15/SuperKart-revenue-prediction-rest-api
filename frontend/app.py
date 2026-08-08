@@ -18,11 +18,11 @@ product_sugar_content = st.selectbox("Product Sugar Content", ['Low Sugar', 'Reg
 product_allocated_area = st.number_input("Product Allocated Area", min_value=0.0, value=0.068)
 product_type = st.selectbox("Product Type", ['Fruits and Vegetables', 'Snack Foods', 'Frozen Foods', 'Dairy', 'Household', 'Baking Goods', 'Canned', 'Health and Hygiene', 'Meat', 'Soft Drinks', 'Breads', 'Hard Drinks', 'Others', 'Starchy Foods', 'Breakfast', 'Seafood'])
 product_mrp = st.number_input("Product MRP", min_value=0.0, value=147.03)
-store_age = st.number_input("Store Age (Years)", min_value=0, max_value=100, value=10)
+store_id = st.selectbox("Store ID", ['OUT001', 'OUT002', 'OUT003', 'OUT004'])
 store_size = st.selectbox("Store Size", ['Medium', 'High', 'Small'])
 store_location_city_type = st.selectbox("Store Location City Type", ['Tier 2', 'Tier 1', 'Tier 3'])
 store_type = st.selectbox("Store Type", ['Supermarket Type2', 'Supermarket Type1', 'Departmental Store', 'Food Mart'])
-store_id = st.selectbox("Store ID", ['OUT001',"OUT002","OUT003","OUT004"])
+store_age = st.number_input("Store Age", min_value=0, value=15)
 
 if st.button("Predict Single Revenue"):
     input_data = {
@@ -31,11 +31,11 @@ if st.button("Predict Single Revenue"):
         'Product_Allocated_Area': product_allocated_area,
         'Product_Type': product_type,
         'Product_MRP': product_mrp,
-        'Store_Age': store_age,
+        'Store_Id': store_id,
         'Store_Size': store_size,
         'Store_Location_City_Type': store_location_city_type,
-        'Store_Type': store_type
-        'Store_Id': store_id
+        'Store_Type': store_type,
+        'Store_Age': store_age
     }
     try:
         response = requests.post(f"{BACKEND_URL}/v1/predict", json=input_data)
